@@ -7,8 +7,8 @@
     <title>스마트 자재 검수 V4</title>
 
     <!-- Open Graph (카카오톡 링크 미리보기) -->
-    <meta property="og:title" content="스마트 자재 검수 V4">
-    <meta property="og:description" content="납품서 PDF 자동 입력 · 스마트 검측 시스템">
+    <meta property="og:title" content="Lynn.">
+    <meta property="og:description" content="스마트 자재 검수 시스템">
     <meta property="og:image" content="https://lynn-inspection.ohk715.workers.dev/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -120,7 +120,7 @@
             border-radius: 20px;
             padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .section-title {
@@ -148,6 +148,7 @@
             padding: 1px 5px;
             vertical-align: middle;
         }
+
         .form-group label {
             display: block;
             font-size: 12px;
@@ -201,14 +202,14 @@
             align-items: center;
             gap: 8px;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
             font-family: inherit;
         }
 
         .doc-btn:hover {
             background: #f8f9fa;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .doc-btn:active {
@@ -265,7 +266,7 @@
         /* ================= 문서 상단 내비게이션 ================= */
         .doc-nav {
             display: none;
-            background: rgba(255,255,255,0.95);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             width: 100%;
             padding: 12px 20px;
@@ -668,7 +669,7 @@
         .btn-sign-save {
             background: var(--primary);
             color: #fff;
-            box-shadow: 0 4px 10px rgba(74,0,224,0.2);
+            box-shadow: 0 4px 10px rgba(74, 0, 224, 0.2);
         }
 
         .btn-sign-cancel {
@@ -1002,12 +1003,17 @@
                     </div>
                 </div>
                 <!-- 숨김 파일 입력 + 상태 표시 -->
-                <input type="file" id="pdf-invoice-input" accept=".pdf" style="display:none;" onchange="uploadInvoicePDF(this)">
-                <div id="pdf-upload-status" style="display:none; margin-bottom:12px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600;"></div>
+                <input type="file" id="pdf-invoice-input" accept=".pdf" style="display:none;"
+                    onchange="uploadInvoicePDF(this)">
+                <div id="pdf-upload-status"
+                    style="display:none; margin-bottom:12px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600;">
+                </div>
 
                 <!-- 품목 선택 (복수 품목일 때 표시) -->
-                <div id="pdf-item-selector" style="display:none; margin-bottom:14px; padding:12px; background:#f8f5ff; border:1px solid #c4a8ff; border-radius:10px;">
-                    <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:8px;">📋 품목 선택 (복수 품목 포함)</div>
+                <div id="pdf-item-selector"
+                    style="display:none; margin-bottom:14px; padding:12px; background:#f8f5ff; border:1px solid #c4a8ff; border-radius:10px;">
+                    <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:8px;">📋 품목 선택 (복수
+                        품목 포함)</div>
                     <div id="pdf-item-list" style="display:flex; flex-direction:column; gap:6px;"></div>
                 </div>
 
@@ -1018,8 +1024,10 @@
                         <span>🔍 API 응답 확인 (Claude 구조화 결과)</span>
                         <span style="font-size:11px; color:#999;">▲/▼ 펼치기</span>
                     </div>
-                    <div id="pdf-debug-body" style="display:none; border:1px solid #ddd; border-top:none; border-radius:0 0 8px 8px; background:#fafafa; padding:12px; overflow-x:auto;">
-                        <pre id="pdf-debug-json" style="margin:0; font-size:11px; color:#333; white-space:pre-wrap; word-break:break-all; font-family:'Courier New',monospace; line-height:1.5;"></pre>
+                    <div id="pdf-debug-body"
+                        style="display:none; border:1px solid #ddd; border-top:none; border-radius:0 0 8px 8px; background:#fafafa; padding:12px; overflow-x:auto;">
+                        <pre id="pdf-debug-json"
+                            style="margin:0; font-size:11px; color:#333; white-space:pre-wrap; word-break:break-all; font-family:'Courier New',monospace; line-height:1.5;"></pre>
                     </div>
                 </div>
 
@@ -2929,7 +2937,7 @@
             const styles = {
                 loading: { background: '#f0f4ff', color: '#4A00E0', border: '1px solid #c4a8ff' },
                 success: { background: '#f0fff4', color: '#1a7f37', border: '1px solid #a3e6b8' },
-                error:   { background: '#fff0f0', color: '#cc0000', border: '1px solid #ffcccc' },
+                error: { background: '#fff0f0', color: '#cc0000', border: '1px solid #ffcccc' },
             };
             Object.assign(el.style, styles[type] || {});
         }
