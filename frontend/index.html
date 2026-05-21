@@ -1,0 +1,3024 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스마트 자재 검수 V4</title>
+    <style>
+        /* 기본 초기화 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* CSS 변수 (라이트 테마) */
+        :root {
+            --primary: #4A00E0;
+            --secondary: #8E2DE2;
+            --bg-dark: #f0f2f5;
+            --text-main: #1c1e21;
+            --text-muted: #65676b;
+            --accent: #4A00E0;
+            --bg-card: #ffffff;
+            --border-card: #e4e6eb;
+            --input-bg: #f0f2f5;
+            --input-border: #ccd0d5;
+            --doc-font-size: 12px;
+            --doc-font-family: 'Batang', serif;
+        }
+
+        /* 인쇄물 폰트 일괄 적용 */
+        .page *:not(.no-override) {
+            font-size: var(--doc-font-size) !important;
+            font-family: var(--doc-font-family) !important;
+        }
+
+        .justify-label {
+            text-align-last: justify;
+            text-align: justify;
+            width: 100%;
+            padding: 0 10px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        /* 화면 전환용 클래스 */
+        body.is-dashboard {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+        }
+
+        body.is-document {
+            background-color: #525659;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        /* ================= 대시보드 전용 스타일 ================= */
+        .dashboard-header {
+            background: #ffffff;
+            padding: 50px 20px 35px;
+            border-bottom: 1px solid var(--border-card);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .dashboard-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .dashboard-header p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .container {
+            padding: 20px 16px 40px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            display: inline-block;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .pdf-autofill-badge {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #1a7f37;
+            background: #d4f0de;
+            border-radius: 4px;
+            padding: 1px 5px;
+            vertical-align: middle;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        .documents-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .doc-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            color: var(--text-main);
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            font-family: inherit;
+        }
+
+        .doc-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .doc-btn:active {
+            background: #f0f2f5;
+            border-color: var(--primary);
+        }
+
+        .doc-btn .icon {
+            font-size: 24px;
+        }
+
+        .doc-btn .name {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* 추가된 리스트 버튼 스타일 */
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: var(--input-bg);
+            border: 1px dashed var(--input-border);
+            border-radius: 8px;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            font-family: inherit;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-add:active {
+            background: #e8eaed;
+        }
+
+        .btn-remove {
+            padding: 4px 10px;
+            background: #fff0f0;
+            color: #cc4444;
+            border: 1px solid #ffcccc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: normal;
+            font-size: 12px;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .btn-remove:active {
+            background: #ffe0e0;
+        }
+
+        /* ================= 문서 상단 내비게이션 ================= */
+        .doc-nav {
+            display: none;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            padding: 12px 20px;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-card);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .doc-nav button {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .btn-back {
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-card) !important;
+        }
+
+        .btn-print {
+            background: #007bff;
+            color: white;
+        }
+
+        /* ================= 문서 공통 스타일 (A4 규격) ================= */
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 15mm;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            color: #000;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .inline-input {
+            border: none;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+            font-family: inherit;
+        }
+
+        .input-full {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+            text-align: center;
+        }
+
+        .input-left {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+            text-align: left;
+            padding-left: 5px;
+        }
+
+        .input-multiline {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 12px;
+            resize: none;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        /* ================= 개별 양식 스타일 ================= */
+        /* 검측요청서 */
+        .req-border {
+            border: 2px solid #000;
+            height: 100%;
+            padding: 0 5mm;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .req-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            margin: 10px 0;
+        }
+
+        .req-table th,
+        .req-table td {
+            border: 1px solid #000;
+            padding: 6px;
+            font-size: 13px;
+        }
+
+        /* 체크리스트 */
+        .chk-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            margin-bottom: 8px;
+        }
+
+        .chk-table th,
+        .chk-table td {
+            border: 1px solid #000;
+            font-size: 13px;
+            padding: 3px;
+            text-align: center;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 5px;
+            text-align: center;
+        }
+
+        /* 참여자실명부 */
+        .part-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            text-align: center;
+        }
+
+        .part-table th,
+        .part-table td {
+            border: 1px solid #000;
+            padding: 2px 4px;
+            font-size: 11px;
+            vertical-align: middle;
+        }
+
+        .part-cell {
+            width: 100%;
+            min-height: 14px;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.2;
+            word-break: keep-all;
+            white-space: pre-wrap;
+        }
+
+        .part-cell-left {
+            text-align: left;
+        }
+
+        .worker-item {
+            background: #f8f9fa;
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .worker-item .btn-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        /* 서명 박스 스타일 */
+        .sign-box {
+            background: #ffffff;
+            border: 2px dashed var(--input-border);
+            border-radius: 8px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sign-box:active {
+            border-color: var(--primary);
+            background: #f8f9fa;
+        }
+
+        .sign-box img {
+            max-height: 80px;
+            max-width: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .sign-box .sign-placeholder {
+            font-size: 14px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .sign-box .sign-placeholder span {
+            font-size: 24px;
+        }
+
+        .sign-cell-btn {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 30px;
+        }
+
+        .sign-cell-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .sign-cell-img {
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .sign-cell-img:hover {
+            opacity: 0.7;
+        }
+
+        /* 사진대지 */
+        .photo-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            table-layout: fixed;
+        }
+
+        .photo-table th,
+        .photo-table td {
+            border: 1px solid #000;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .photo-area {
+            width: 100%;
+            height: 110mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            border: 2px dashed #ced4da;
+        }
+
+        .photo-area img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            background-color: #fff;
+            pointer-events: none;
+        }
+
+        .photo-area span {
+            color: #6c757d;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* ================= 서명 패드 모달 ================= */
+        .sign-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sign-modal-overlay.active {
+            display: flex;
+        }
+
+        .sign-modal {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px;
+            width: min(98vw, 560px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 95vh;
+        }
+
+        .sign-modal-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        .sign-canvas-wrap {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-card);
+            position: relative;
+            width: 100%;
+            height: 250px;
+            /* fixed height for consistent ratio */
+        }
+
+        #sign-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .sign-guide {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #aaa;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .sign-modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sign-modal-btns button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .btn-sign-clear {
+            background: #f0f2f5;
+            color: var(--text-main);
+            border: 1px solid var(--border-card);
+        }
+
+        .btn-sign-save {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(74,0,224,0.2);
+        }
+
+        .btn-sign-cancel {
+            background: #fff0f0;
+            color: #cc4444;
+            border: 1px solid #ffcccc;
+            flex: 0.6;
+        }
+
+
+        @media (max-width: 768px) {
+            .row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .col {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .sign-modal-overlay {
+                align-items: stretch;
+                padding: 8px;
+            }
+
+            .sign-modal {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 16px;
+                padding: 16px;
+                gap: 12px;
+                flex: 1;
+                justify-content: center;
+            }
+
+            .sign-modal-title {
+                font-size: 22px;
+                padding: 4px 0;
+            }
+
+            .sign-canvas-wrap {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #sign-canvas {
+                flex: 1;
+                min-height: 250px;
+            }
+
+            .sign-guide {
+                font-size: 15px;
+                bottom: 15px;
+            }
+
+            .sign-modal-btns button {
+                padding: 18px;
+                font-size: 18px;
+                border-radius: 14px;
+            }
+
+            /* 대시보드 서명 박스 확대 */
+            .sign-box {
+                min-height: 110px;
+            }
+
+            .sign-box img {
+                max-height: 95px;
+            }
+
+            .sign-box .sign-placeholder {
+                font-size: 16px;
+                gap: 8px;
+            }
+
+            .sign-box .sign-placeholder span {
+                font-size: 36px;
+            }
+
+            .sign-cell-img {
+                max-height: 50px;
+            }
+
+            .sign-cell-btn {
+                font-size: 22px;
+                height: 40px;
+            }
+
+            /* 문서 확인 화면에서 가로 스크롤 허용 및 버튼 정렬 */
+            .page-container {
+                overflow-x: auto;
+                padding: 10px;
+                align-items: flex-start;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .page {
+                margin: 0 auto;
+            }
+
+            .doc-nav {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 15px 10px;
+            }
+
+            .doc-nav div {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                gap: 5px;
+            }
+
+            .doc-nav button {
+                flex: 1;
+                text-align: center;
+                padding: 12px 2px;
+                font-size: 12px;
+                margin: 0;
+            }
+
+            .btn-back {
+                width: 100%;
+                margin-bottom: 5px;
+                padding: 15px;
+                font-size: 15px;
+            }
+
+            .documents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ================= 인쇄 전용 스타일 ================= */
+        @media print {
+            @page {
+                margin: 0;
+                size: A4 portrait;
+            }
+
+            html,
+            body {
+                width: 210mm;
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* 네비게이션 및 대시보드 강제 숨김 */
+            .no-print,
+            .doc-nav,
+            #doc-nav,
+            .dashboard-view,
+            #view-dashboard,
+            #doc-nav * {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+
+            /* 기본적으로 모든 섹션 숨김 */
+            .view-section {
+                display: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* active 클래스가 있거나 전체 출력 모드일 때 표시 (단, 대시보드는 제외) */
+            .view-section.active:not(#view-dashboard),
+            body.print-all-mode .view-section:not(#view-dashboard) {
+                display: block !important;
+                visibility: visible !important;
+            }
+
+            .page-container {
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+                border: 0 !important;
+            }
+
+            .page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 15mm !important;
+                /* 상하좌우 동일한 균형 여백 */
+                page-break-after: always;
+                page-break-inside: avoid;
+                display: flex !important;
+                /* 수직 중앙 정렬을 위한 플렉스박스 */
+                flex-direction: column !important;
+                justify-content: center !important;
+                width: 210mm !important;
+                height: 296.5mm !important;
+                /* A4 세로에서 살짝 줄여 빈 페이지 출력 완벽 차단 */
+                max-height: 296.5mm !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                overflow: hidden !important;
+            }
+
+            .page.full-page {
+                padding: 0 !important;
+            }
+
+            .req-border {
+                padding: 0;
+                border: none;
+            }
+
+            input::placeholder,
+            textarea::placeholder {
+                color: transparent;
+            }
+
+            .photo-area {
+                border: none !important;
+                background-color: transparent;
+            }
+
+            .photo-area span {
+                display: none !important;
+            }
+        }
+    </style>
+    <!-- 내보내기용 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+</head>
+
+<body class="is-dashboard">
+
+    <!-- ================= 서명 패드 모달 ================= -->
+    <div id="sign-modal-overlay" class="sign-modal-overlay" ontouchstart="event.stopPropagation()">
+        <div class="sign-modal">
+            <div class="sign-modal-title">✍️ 서명 입력</div>
+            <div class="sign-canvas-wrap">
+                <canvas id="sign-canvas" height="300"></canvas>
+                <span class="sign-guide">이 곳에 서명하세요</span>
+            </div>
+            <div class="sign-modal-btns">
+                <button class="btn-sign-cancel" onclick="closeSignModal()">✕ 닫기</button>
+                <button class="btn-sign-clear" onclick="clearSignCanvas()">🗑 지우기</button>
+                <button class="btn-sign-save" onclick="saveSign()">✔ 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 문서 확인용 상단 네비게이션 -->
+    <div id="doc-nav" class="doc-nav no-print">
+        <button class="btn-back" onclick="showDashboard()">⬅️ 작성으로 돌아가기</button>
+        <div style="display:flex; gap: 8px;">
+            <button onclick="openDoc('all')"
+                style="background:var(--primary); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; padding:10px 15px;">👀
+                전체 보기</button>
+            <button class="btn-print-all" onclick="printAll()" style="background:#4A00E0; color:white;">⭐ 전체 PDF
+                저장</button>
+            <button class="btn-word" onclick="exportWordHTML()" style="background:#2b579a; color:white;">📝 Word
+                (수정가능)</button>
+            <button class="btn-print" onclick="window.print()">🖨️ 화면인쇄</button>
+        </div>
+    </div>
+
+    <!-- ================= DASHBOARD (입력 폼) ================= -->
+    <div id="view-dashboard" class="view-section active dashboard-view">
+        <div class="dashboard-header">
+            <h1>스마트 자재 검수 V4</h1>
+            <p>납품서 PDF 자동 입력 · 스마트 검측 시스템</p>
+            <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
+                <button onclick="saveTempData()"
+                    style="padding: 8px 20px; background: var(--primary); border: none; color: white; border-radius: 25px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(74,0,224,0.2);">💾
+                    임시저장</button>
+                <button onclick="loadTempData()"
+                    style="padding: 8px 20px; background: #ffffff; border: 1px solid var(--border-card); color: var(--text-main); border-radius: 25px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">📂
+                    불러오기</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- 1. 공통 기본 정보 -->
+            <div class="glass-card">
+                <div class="section-title">🏢 현장 및 검측 기본 정보</div>
+                <div class="form-group">
+                    <label>공사명</label>
+                    <input type="text" class="form-input" id="in-projectName" value="세종 행정중심복합도시 6-3 생활권 M3 BL">
+                </div>
+
+                <div class="row">
+                    <div class="col form-group">
+                        <label>문서 번호</label>
+                        <input type="text" class="form-input" id="in-docNo" value="세종기검 - 107동 - 008">
+                    </div>
+                    <div class="col form-group">
+                        <label>검측 일자</label>
+                        <input type="text" class="form-input" id="in-date" value="2026년  3월  30일">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>공종</label>
+                        <input type="text" class="form-input" id="in-workType" value="기계설비">
+                    </div>
+                </div>
+                <div class="section-title"
+                    style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>📦 자재 및 검수 세부 정보</span>
+                    <!-- PDF 자동입력 버튼 (section-title 우측) -->
+                    <button id="pdf-upload-btn" onclick="document.getElementById('pdf-invoice-input').click()"
+                        style="padding:5px 14px; background:var(--primary); color:white; border:none; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:5px;">
+                        📄 납품서 PDF
+                    </button>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="saveMaterialTemplate()"
+                            style="padding: 4px 10px; background: #eee8ff; border: 1px solid #c4a8ff; color: var(--primary); border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">💡
+                            템플릿 저장</button>
+                        <button onclick="loadMaterialTemplateList()"
+                            style="padding: 4px 10px; background: #f0f2f5; border: 1px solid var(--input-border); color: var(--text-main); border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">📂
+                            템플릿 불러오기</button>
+                    </div>
+                </div>
+                <!-- 숨김 파일 입력 + 상태 표시 -->
+                <input type="file" id="pdf-invoice-input" accept=".pdf" style="display:none;" onchange="uploadInvoicePDF(this)">
+                <div id="pdf-upload-status" style="display:none; margin-bottom:12px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600;"></div>
+
+                <!-- 품목 선택 (복수 품목일 때 표시) -->
+                <div id="pdf-item-selector" style="display:none; margin-bottom:14px; padding:12px; background:#f8f5ff; border:1px solid #c4a8ff; border-radius:10px;">
+                    <div style="font-size:12px; font-weight:700; color:var(--primary); margin-bottom:8px;">📋 품목 선택 (복수 품목 포함)</div>
+                    <div id="pdf-item-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+                </div>
+
+                <!-- API 응답 검사 패널 -->
+                <div id="pdf-debug-panel" style="display:none; margin-bottom:14px;">
+                    <div onclick="document.getElementById('pdf-debug-body').style.display = document.getElementById('pdf-debug-body').style.display==='none' ? 'block' : 'none'"
+                        style="background:#f0f2f5; border:1px solid #ddd; border-radius:8px 8px 0 0; padding:8px 14px; font-size:12px; font-weight:700; color:#555; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🔍 API 응답 확인 (Claude 구조화 결과)</span>
+                        <span style="font-size:11px; color:#999;">▲/▼ 펼치기</span>
+                    </div>
+                    <div id="pdf-debug-body" style="display:none; border:1px solid #ddd; border-top:none; border-radius:0 0 8px 8px; background:#fafafa; padding:12px; overflow-x:auto;">
+                        <pre id="pdf-debug-json" style="margin:0; font-size:11px; color:#333; white-space:pre-wrap; word-break:break-all; font-family:'Courier New',monospace; line-height:1.5;"></pre>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col form-group">
+                        <label>품명</label>
+                        <input type="text" class="form-input" id="in-itemName" value="">
+                    </div>
+                    <div class="col form-group">
+                        <label>규격</label>
+                        <input type="text" class="form-input" id="in-spec" value="">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>자재공급원승인</label>
+                        <input type="text" class="form-input" id="in-materialApproval" value="">
+                    </div>
+                    <div class="col form-group">
+                        <label>KS 여부</label>
+                        <input type="text" class="form-input" id="in-ks" value="">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>제조사</label>
+                        <input type="text" class="form-input" id="in-manufacturer" value="">
+                    </div>
+                    <div class="col form-group">
+                        <label>납품회사</label>
+                        <input type="text" class="form-input" id="in-supplier" value="">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>검수요청수량</label>
+                        <input type="text" class="form-input" id="in-quantity" value="">
+                    </div>
+                    <div class="col form-group">
+                        <label>시공자의견</label>
+                        <input type="text" class="form-input" id="in-contractorOpinion" value="">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>특기사항</label>
+                    <textarea class="form-input" id="in-specialNotes" rows="3" style="resize:vertical;"></textarea>
+                </div>
+                <div class="section-title" style="margin-top:20px;">✍️ 담당자 정보</div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>시공자 / 점검자</label>
+                        <input type="text" class="form-input" id="in-builder1" value="이 승 현">
+                    </div>
+                    <div class="col form-group">
+                        <label>현장 대리인</label>
+                        <input type="text" class="form-input" id="in-builder2" value="김 민 갑">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>담당 감리원</label>
+                        <input type="text" class="form-input" id="in-supervisor1" value="황 덕 연">
+                    </div>
+                    <div class="col form-group">
+                        <label>총괄 감리원</label>
+                        <input type="text" class="form-input" id="in-supervisor2" value="정 순 양">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 체크리스트 작성 (인라인) -->
+            <div class="glass-card">
+                <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>☑️ 체크리스트 항목 작성</span>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="saveChkTemplate()"
+                            style="padding: 4px 10px; background: #eee8ff; border: 1px solid #c4a8ff; color: var(--primary); border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">💡
+                            템플릿 저장</button>
+                        <button onclick="loadChkTemplateList()"
+                            style="padding: 4px 10px; background: #f0f2f5; border: 1px solid var(--input-border); color: var(--text-main); border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">📂
+                            템플릿 불러오기</button>
+                    </div>
+                </div>
+                <div class="form-group" style="text-align:left; margin-top:10px;">
+                    <label style="font-size:12px; color:var(--text-muted); margin-bottom:8px; display:block;">검사항목과
+                        기준/참고사항을 입력해주세요.</label>
+                    <div id="chk-list-container">
+                        <!-- chkItems will be appended here -->
+                    </div>
+                    <button class="btn-add" onclick="addChkItem()">+ 체크리스트 항목 추가하기</button>
+                </div>
+            </div>
+
+            <!-- 3. 사진대지 작성 (인라인) -->
+            <div class="glass-card">
+                <div class="section-title">📷 사진대지 작성</div>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">사진을 터치하여 촬영하거나 앨범에서 선택하세요.</p>
+                <div id="inline-photo-container">
+                    <!-- 사진 항목은 JS로 추가됨 -->
+                </div>
+                <button class="btn-add" onclick="addInlinePhoto()" style="margin-top:5px;">+ 사진 추가하기</button>
+            </div>
+
+            <!-- 3. 인쇄 서식 설정 -->
+            <div class="glass-card">
+                <div class="section-title">⚙️ 인쇄 서식 설정</div>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>글자 크기 (8~15px)</label>
+                        <select id="setting-fontSize" class="form-input" onchange="applySettings()">
+                            <option value="8px">8px</option>
+                            <option value="9px">9px</option>
+                            <option value="10px">10px</option>
+                            <option value="11px">11px</option>
+                            <option value="12px" selected>12px (기본)</option>
+                            <option value="13px">13px</option>
+                            <option value="14px">14px</option>
+                            <option value="15px">15px</option>
+                        </select>
+                    </div>
+                    <div class="col form-group">
+                        <label>글씨체</label>
+                        <select id="setting-fontFamily" class="form-input" onchange="applySettings()">
+                            <option value="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">맑은 고딕</option>
+                            <option value="'Nanum Gothic', sans-serif">나눔 고딕</option>
+                            <option value="'Batang', serif" selected>바탕체</option>
+                            <option value="'Gulim', sans-serif">굴림체</option>
+                            <option value="'Dotum', sans-serif">돋움체</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 출력 및 미리보기 -->
+            <div class="glass-card">
+                <div class="section-title">🖨️ 인쇄 및 출력</div>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">작성을 마친 뒤 미리보기를 확인하거나 바로 파일로 저장할
+                    수 있습니다.</p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button onclick="openDoc('all')"
+                        style="padding:15px; background:var(--primary); border:none; color:white; border-radius:10px; font-weight:bold; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(74,0,224,0.2);">🔍
+                        전체 문서 미리보기</button>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="printAll()"
+                            style="flex:1; padding:15px; background:var(--primary); border:none; color:white; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(74,0,224,0.2);">⭐
+                            전체 PDF 저장</button>
+                        <button onclick="exportWordHTML()"
+                            style="flex:1; padding:15px; background:#2b579a; border:none; color:white; border-radius:10px; font-weight:bold; cursor:pointer;">📝
+                            Word 저장</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 검측요청서 ================= -->
+    <div id="view-request" class="view-section">
+        <div class="page-container">
+            <div class="page">
+                <div class="req-border">
+                    <div class="no-override"
+                        style="text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin-bottom: 25px;">
+                        자재 검수 요청서</div>
+                    <table style="width:100%; border:none; margin-bottom:5px;">
+                        <tr>
+                            <td style="text-align:left; border:none; padding:0;">
+                                <div style="display:inline-block; width: 80px;" class="justify-label">문 서 번 호</div> :
+                                <input type="text" class="inline-input out-docNo" style="width:200px;">
+                            </td>
+                            <td style="text-align:right; border:none; padding:0;"><input type="text"
+                                    class="inline-input out-date"
+                                    style="width:180px; text-align:right; letter-spacing: 2px;"></td>
+                        </tr>
+                    </table>
+                    <div style="margin-bottom: 5px; text-align: left;">
+                        <div style="display:inline-block; width: 80px;" class="justify-label">수 신</div> : <input
+                            type="text" value="총괄 감리원" class="inline-input">
+                    </div>
+                    <div style="margin-top: 15px; margin-bottom: 5px; text-align: left; padding-left: 10px;">상기 자재에 대한
+                        검수를 요청하오니 결과 통보하여 주시기 바랍니다.</div>
+
+                    <table class="req-table" style="margin: 5px 0;">
+                        <tr>
+                            <th style="font-weight:normal; width:22%;">
+                                <div class="justify-label">공 사 명</div>
+                            </th>
+                            <td style="width:38%;"><input type="text" class="input-left out-projectName"></td>
+                            <th style="font-weight:normal; width:15%;">
+                                <div class="justify-label">공 종</div>
+                            </th>
+                            <td style="width:25%;"><input type="text" class="input-left out-workType"></td>
+                        </tr>
+                        <tr>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">품 명</div>
+                            </th>
+                            <td><input type="text" class="input-left out-itemName"></td>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">규 격</div>
+                            </th>
+                            <td><input type="text" class="input-left out-spec"></td>
+                        </tr>
+                        <tr>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">자 재 공 급 원 승 인</div>
+                            </th>
+                            <td><input type="text" class="input-left out-materialApproval"></td>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">K S 여 부</div>
+                            </th>
+                            <td><input type="text" class="input-left out-ks"></td>
+                        </tr>
+                        <tr>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">제 조 사</div>
+                            </th>
+                            <td><input type="text" class="input-left out-manufacturer"></td>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">납 품 회 사</div>
+                            </th>
+                            <td><input type="text" class="input-left out-supplier"></td>
+                        </tr>
+                        <tr>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">검 수 요 청 수 량</div>
+                            </th>
+                            <td colspan="3"><input type="text" class="input-left out-quantity"></td>
+                        </tr>
+                        <tr>
+                            <th style="font-weight:normal;">
+                                <div class="justify-label">시 공 자 의 견</div>
+                            </th>
+                            <td colspan="3"><input type="text" class="input-left out-contractorOpinion"></td>
+                        </tr>
+                        <tr>
+                            <th style="font-weight:normal; height: 60px;">
+                                <div class="justify-label">특 기 사 항</div>
+                            </th>
+                            <td colspan="3"><textarea class="out-specialNotes"
+                                    style="width: 100%; height: 100%; min-height: 50px; border: none; outline: none; background: transparent; font-family: inherit; font-size: inherit; resize: none; overflow: hidden; padding-left: 5px; line-height: 1.5;"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="margin-top: 5px; text-align: left; padding-left: 10px; margin-bottom: 15px;">
+                        붙 임 : 거래명세표, 체크리스트, 사진대지. 끝.
+                    </div>
+
+                    <table style="width:100%; border:none; margin-top:5px; margin-bottom:20px;">
+                        <tr>
+                            <td style="border:none;"></td>
+                            <td style="width:130px; text-align:center; border:none; padding:5px;">
+                                <div class="justify-label">담 당 자</div>
+                            </td>
+                            <td style="width:120px; text-align:right; border:none; padding:5px;"><input type="text"
+                                    class="inline-input out-builder1"
+                                    style="width:70px; text-align:right; letter-spacing: 4px;"> (인)</td>
+                        </tr>
+                        <tr>
+                            <td style="border:none;"></td>
+                            <td style="width:130px; text-align:center; border:none; padding:5px;">
+                                <div class="justify-label">현 장 대 리 인</div>
+                            </td>
+                            <td style="width:120px; text-align:right; border:none; padding:5px;"><input type="text"
+                                    class="inline-input out-builder2"
+                                    style="width:70px; text-align:right; letter-spacing: 4px;"> (인)</td>
+                        </tr>
+                    </table>
+
+                    <div class="no-override"
+                        style="text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 10px; margin-top: 10px; margin-bottom: 20px; border-top: 2px solid #000; padding-top: 15px;">
+                        자재 검수 결과 통보</div>
+
+                    <table style="width:100%; border:none; margin-bottom:5px;">
+                        <tr>
+                            <td style="text-align:left; border:none; padding:0;">
+                                <div style="display:inline-block; width: 80px;" class="justify-label">문 서 번 호</div> :
+                                <input type="text" class="inline-input out-docNo" style="width:200px;">
+                            </td>
+                            <td style="text-align:right; border:none; padding:0; letter-spacing: 2px;"><span
+                                    class="year-only"></span>년&nbsp;&nbsp;&nbsp;월&nbsp;&nbsp;&nbsp;일</td>
+                        </tr>
+                    </table>
+                    <div style="margin-bottom: 5px; text-align: left;">
+                        <div style="display:inline-block; width: 80px;" class="justify-label">수 신</div> : <input
+                            type="text" value="현장대리인" class="inline-input">
+                    </div>
+                    <div
+                        style="margin-top: 15px; margin-bottom: 5px; line-height: 1.6; text-align: left; padding-left: 10px;">
+                        상기 검토요청에 대한 검토 결과를 통보합니다.
+                    </div>
+
+                    <table class="req-table" style="margin-top: 5px;">
+                        <tr>
+                            <th style="height: 60px; font-weight:normal; width:22%;">
+                                <div class="justify-label">검 토 의 견</div>
+                            </th>
+                            <td style="width:78%;"><textarea
+                                    style="width:100%; height:100%; border:none; resize:none; outline:none; font-family:inherit; background: transparent;"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="height: 40px; font-weight:normal;">
+                                <div class="justify-label">판 정</div>
+                            </th>
+                            <td colspan="3" style="vertical-align: middle; text-align: center;">
+                                적합 □ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 부적합 □
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="height: 60px; font-weight:normal;">
+                                <div class="justify-label">특 기 사 항</div>
+                            </th>
+                            <td><textarea
+                                    style="width:100%; height:100%; border:none; resize:none; outline:none; background: transparent; font-family: inherit;"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width:100%; border:none; margin-top:15px; margin-bottom:20px;">
+                        <tr>
+                            <td style="border:none;"></td>
+                            <td style="width:130px; text-align:center; border:none; padding:5px;">
+                                <div class="justify-label">기 계 감 리 원</div>
+                            </td>
+                            <td style="width:120px; text-align:right; border:none; padding:5px;"><input type="text"
+                                    class="inline-input out-supervisor1"
+                                    style="width:70px; text-align:right; letter-spacing: 4px;"> (인)</td>
+                        </tr>
+                        <tr>
+                            <td style="border:none;"></td>
+                            <td style="width:130px; text-align:center; border:none; padding:5px;">
+                                <div class="justify-label">총 괄 감 리 원</div>
+                            </td>
+                            <td style="width:120px; text-align:right; border:none; padding:5px;"><input type="text"
+                                    class="inline-input out-supervisor2"
+                                    style="width:70px; text-align:right; letter-spacing: 4px;"> (인)</td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: auto; font-size: 12px; font-weight: bold; line-height: 1.8;">
+                        ※ 2부 작성하여 시공자, 감리원 각 1부를 보관하여야 합니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 체크리스트 ================= -->
+    <div id="view-checklist" class="view-section">
+        <div class="page-container">
+            <div class="page">
+                <table style="width: 100%; border: none; margin-bottom: 5px;">
+                    <tr>
+                        <td class="no-override"
+                            style="border: none; text-align: center; font-size: 18px; font-weight: bold; vertical-align: middle;">
+                            자재검수 체크리스트</td>
+                        <td style="border: none; width: 1%; white-space: nowrap;">
+                            <table
+                                style="width: auto; border: 2px solid #000; margin-bottom: 0; border-collapse: collapse; float: right;">
+                                <tr>
+                                    <th
+                                        style="padding: 5px 10px; border-right: 1px solid #000; font-size: 14px; white-space: nowrap;">
+                                        문서 번호</th>
+                                    <td style="padding: 5px 10px; white-space: nowrap;">
+                                        <div class="out-docNo" contenteditable="true"
+                                            style="min-width: 150px; text-align: center; font-size: 14px; font-family: inherit; outline: none;">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="chk-table" style="margin-bottom: 5px;">
+                    <tr>
+                        <th style="width: 12%;">공 종</th>
+                        <td style="width: 38%;"><input type="text" class="input-full out-workType"></td>
+                        <th style="width: 12%;">품 명</th>
+                        <td style="width: 38%;"><input type="text" class="input-full out-itemName"></td>
+                    </tr>
+                    <tr>
+                        <th>규 격</th>
+                        <td><input type="text" class="input-full out-spec"></td>
+                        <th>수 량</th>
+                        <td><input type="text" class="input-full out-quantity"></td>
+                    </tr>
+                </table>
+
+                <table class="chk-table" style="margin-bottom: 5px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 8%;">구 분</th>
+                            <th rowspan="2" style="width: 35%;">검 사 항 목</th>
+                            <th rowspan="2" style="width: 15%;">기준,참고사항</th>
+                            <th colspan="2" style="width: 13%;">시공자</th>
+                            <th colspan="2" style="width: 13%;">감리자</th>
+                            <th rowspan="2" style="width: 16%;">조치 사항</th>
+                        </tr>
+                        <tr>
+                            <th>적합</th>
+                            <th>부적합</th>
+                            <th>적합</th>
+                            <th>부적합</th>
+                        </tr>
+                    </thead>
+                    <tbody id="checklist-tbody">
+                        <!-- JS generated rows -->
+                    </tbody>
+                </table>
+
+                <table class="chk-table" style="margin-bottom: 0;">
+                    <tr>
+                        <th style="width: 20%; padding: 5px 0;">시공자점검일</th>
+                        <td style="width: 30%;"><input type="text" class="input-full out-date"></td>
+                        <th style="width: 20%;">책 임 기 술 자</th>
+                        <td style="width: 30%; text-align: center;">
+                            <input type="text" class="inline-input out-builder1"
+                                style="width: 60px; text-align: right;"> (인)
+                        </td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 5px 0;">감리자점검일</th>
+                        <td><input type="text" class="input-full out-date"></td>
+                        <th>담 당 감 리 원</th>
+                        <td style="text-align: center;">
+                            <input type="text" class="inline-input out-supervisor1"
+                                style="width: 60px; text-align: right;"> (인)
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- ================= 사진대지 ================= -->
+    <div id="view-photos" class="view-section">
+        <div class="page-container">
+            <div class="page">
+                <table class="photo-table">
+                    <colgroup>
+                        <col style="width: 10%;">
+                        <col style="width: 40%;">
+                        <col style="width: 10%;">
+                        <col style="width: 40%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th colspan="4"
+                                style="font-size: 26px; font-weight: bold; padding: 12px 0; letter-spacing: 15px;">사 진 대
+                                지</th>
+                        </tr>
+                        <tr>
+                            <th colspan="4" style="height: 25px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" style="padding: 10px;">
+                                <div class="photo-area" onclick="triggerInput(this)">
+                                    <span>여기를 터치하여 앨범/카메라 열기</span>
+                                    <input type="file" accept="image/*" capture="environment" style="display:none;"
+                                        onchange="previewImage(this)">
+                                    <img src="" style="display:none;">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="height:50px; font-size:14px; letter-spacing:5px;">일 자</th>
+                            <td style="padding:0;"><input type="text" class="input-full out-date" style="height:100%;">
+                            </td>
+                            <th style="font-size:14px; letter-spacing:5px;">내 용</th>
+                            <td style="padding:0;">
+                                <div class="out-photoTitle" contenteditable="true"
+                                    style="width:100%; height:46px; border:none; outline:none; font-family:inherit; font-size:14px; padding:0 5px; background:transparent; line-height:1.4; display:flex; align-items:center; box-sizing:border-box; overflow:hidden; word-break:keep-all;">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding: 10px;">
+                                <div class="photo-area" onclick="triggerInput(this)">
+                                    <span>여기를 터치하여 앨범/카메라 열기</span>
+                                    <input type="file" accept="image/*" capture="environment" style="display:none;"
+                                        onchange="previewImage(this)">
+                                    <img src="" style="display:none;">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="height:50px; font-size:14px; letter-spacing:5px;">일 자</th>
+                            <td style="padding:0;"><input type="text" class="input-full out-date" style="height:100%;">
+                            </td>
+                            <th style="font-size:14px; letter-spacing:5px;">내 용</th>
+                            <td style="padding:0;">
+                                <div class="out-photoTitle" contenteditable="true"
+                                    style="width:100%; height:46px; border:none; outline:none; font-family:inherit; font-size:14px; padding:0 5px; background:transparent; line-height:1.4; display:flex; align-items:center; box-sizing:border-box; overflow:hidden; word-break:keep-all;">
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;" class="no-print">
+            <button onclick="addPhotoPage()"
+                style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(74,0,224,0.2); transition: 0.2s;">➕
+                사진대지 페이지 추가하기</button>
+        </div>
+    </div>
+
+    <!-- ================= SCRIPT ================= -->
+    <script>
+        function applySettings() {
+            const size = document.getElementById('setting-fontSize').value;
+            const family = document.getElementById('setting-fontFamily').value;
+            document.documentElement.style.setProperty('--doc-font-size', size);
+            document.documentElement.style.setProperty('--doc-font-family', family);
+        }
+
+        // ================= 인라인 사진대지 관리 =================
+        let _inlinePhotoCount = 0;
+
+        function addInlinePhoto() {
+            _inlinePhotoCount++;
+            const container = document.getElementById('inline-photo-container');
+            const div = document.createElement('div');
+            div.className = 'inline-photo-item';
+            div.style.cssText = 'background: #f8f9fa; border: 1px solid #e4e6eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; position: relative;';
+            div.innerHTML = `
+                <button class="btn-remove" onclick="this.parentElement.remove()" style="position:absolute; top:10px; right:10px; z-index:1;">X</button>
+                <div style="width:100%; height:200px; background:#ffffff; border:1px solid #e4e6eb; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; margin-bottom:10px;" onclick="this.querySelector('input').click()">
+                    <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="inlinePreviewImage(this)">
+                    <img src="" style="display:none; width:100%; height:100%; object-fit:cover;">
+                    <span style="color:#888; font-size:13px; text-align:center; pointer-events:none;">📷 터치하여 사진 촬영 또는 앨범 선택</span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <div style="flex:1;">
+                        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">일 자</label>
+                        <input type="text" class="form-input out-date" style="font-size:13px; padding:7px;" placeholder="예) 2026년 3월 30일">
+                    </div>
+                    <div style="flex:2;">
+                        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">내 용</label>
+                        <input type="text" class="form-input out-photoTitle" style="font-size:13px; padding:7px;" placeholder="사진 설명">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function inlinePreviewImage(input) {
+            const wrapper = input.parentElement;
+            const img = wrapper.querySelector('img');
+            const span = wrapper.querySelector('span');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    span.style.display = 'none';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 인라인 사진대지 → view-photos 인쇄용 뷰로 동기화
+        function syncInlinePhotosToView() {
+            const photoView = document.getElementById('view-photos');
+            const inlineItems = document.querySelectorAll('#inline-photo-container .inline-photo-item');
+            const pageContainer = photoView.querySelector('.page-container');
+
+            // 기존 페이지 모두 삭제 후 재생성
+            Array.from(pageContainer.querySelectorAll('.page')).forEach(p => p.remove());
+
+            const itemsArr = Array.from(inlineItems);
+            for (let p = 0; p < itemsArr.length; p += 2) {
+                const page = document.createElement('div');
+                page.className = 'page';
+                const tableWrap = document.createElement('div');
+                tableWrap.innerHTML = `<table class="photo-table" style="width:100%; border-collapse:collapse; border:2px solid #000; table-layout:fixed;">
+                    <colgroup><col style="width:10%;"><col style="width:40%;"><col style="width:10%;"><col style="width:40%;"></colgroup>
+                    <thead>
+                        <tr><th colspan="4" style="font-size:26px; font-weight:bold; padding:12px 0; letter-spacing:15px; border:1px solid #000;">사 진 대 지</th></tr>
+                        <tr><th colspan="4" style="height:25px; border:1px solid #000;"></th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>`;
+                page.appendChild(tableWrap);
+                pageContainer.appendChild(page);
+                const tbody = tableWrap.querySelector('tbody');
+
+                for (let s = p; s < Math.min(p + 2, itemsArr.length); s++) {
+                    const item = itemsArr[s];
+                    const img = item.querySelector('img');
+                    const datInput = item.querySelector('input.out-date');
+                    const titleInput = item.querySelector('input.out-photoTitle');
+                    const imgSrc = (img && img.style.display !== 'none') ? img.src : '';
+                    const dateVal = datInput ? datInput.value : '';
+                    const titleVal = titleInput ? titleInput.value : '';
+
+                    const tr1 = document.createElement('tr');
+                    tr1.innerHTML = `<td colspan="4" style="padding:10px; border:1px solid #000;">
+                        <div style="width:100%; height:110mm; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; ${imgSrc ? 'background:#fff;' : 'background:#f8f9fa; border:2px dashed #ced4da;'}">
+                            ${imgSrc ? `<img src="${imgSrc}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;">` : '<span style="color:#6c757d; font-size:14px;">사진 없음</span>'}
+                        </div>
+                    </td>`;
+                    tbody.appendChild(tr1);
+
+                    const tr2 = document.createElement('tr');
+                    tr2.innerHTML = `
+                        <th style="height:50px; font-size:14px; letter-spacing:5px; border:1px solid #000;">일 자</th>
+                        <td style="padding:0; border:1px solid #000;"><input type="text" class="input-full" value="${dateVal}" style="height:100%;"></td>
+                        <th style="font-size:14px; letter-spacing:5px; border:1px solid #000;">내 용</th>
+                        <td style="padding:0; border:1px solid #000;"><div style="width:100%; height:46px; border:none; outline:none; font-family:inherit; font-size:14px; padding:0 5px; background:transparent; line-height:1.4; display:flex; align-items:center;">${titleVal}</div></td>
+                    `;
+                    tbody.appendChild(tr2);
+                }
+            }
+
+            if (itemsArr.length === 0) {
+                // 빈 페이지 1개
+                const page = document.createElement('div');
+                page.className = 'page';
+                page.innerHTML = `<div style="text-align:center; padding:50px; color:#999;">사진이 없습니다.</div>`;
+                pageContainer.appendChild(page);
+            }
+        }
+
+        function addChkItem(data = { q: '', ref: '' }) {
+            const container = document.getElementById('chk-list-container');
+            const div = document.createElement('div');
+            div.className = 'row form-group chk-input-item';
+            div.style.alignItems = 'flex-start';
+            div.innerHTML = `
+                <div class="col" style="flex:2;">
+                    <textarea class="form-input chk-q" rows="2" placeholder="검사항목" style="resize:none;">${data.q}</textarea>
+                </div>
+                <div class="col" style="flex:1;">
+                    <textarea class="form-input chk-ref" rows="2" placeholder="기준/참고" style="resize:none;">${data.ref}</textarea>
+                </div>
+                <button class="btn-remove" style="margin-top:0; height:100%;" onclick="this.parentElement.remove(); renderChecklistTable();">X</button>
+            `;
+            container.appendChild(div);
+
+            div.querySelectorAll('textarea').forEach(el => el.addEventListener('input', renderChecklistTable));
+            renderChecklistTable();
+        }
+
+        function renderChecklistTable() {
+            const chkTbody = document.getElementById('checklist-tbody');
+            if (!chkTbody) return;
+
+            // 1. 현재 테이블 상태(체크박스, 서명 등) 저장
+            const rows = chkTbody.querySelectorAll('tr');
+            const currentStates = [];
+            rows.forEach(tr => {
+                const checks = tr.querySelectorAll('td div[style*="font-size: 18px"]');
+                const lastTd = tr.querySelector('td:last-child div');
+                currentStates.push({
+                    check1: checks.length > 0 ? checks[0].innerText : '',
+                    check2: checks.length > 1 ? checks[1].innerText : '',
+                    check3: checks.length > 2 ? checks[2].innerText : '',
+                    check4: checks.length > 3 ? checks[3].innerText : '',
+                    note: lastTd ? lastTd.innerText : ''
+                });
+            });
+
+            // 2. 대시보드 데이터 수집
+            const items = [];
+            document.querySelectorAll('#chk-list-container .chk-input-item').forEach(item => {
+                items.push({
+                    q: item.querySelector('.chk-q').value,
+                    ref: item.querySelector('.chk-ref').value
+                });
+            });
+
+            // 3. 다시 그리기 (20개 고정)
+            chkTbody.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                const item = items[i] || { q: '', ref: '' };
+                const state = currentStates[i] || { check1: '', check2: '', check3: '', check4: '', note: '' };
+
+                const tr = document.createElement('tr');
+                tr.style.height = '34px';
+                tr.innerHTML = `
+                    <th style="padding:0; width:8%; vertical-align: middle; cursor: text;" onclick="const d=this.querySelector('div'); if(d) d.focus();">
+                        <div contenteditable="true" style="min-height: 22px; border: none; outline: none; text-align: center; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 2px; background: transparent; font-family: inherit; font-size: 12px; padding: 4px 0; margin: 0 auto;"></div>
+                    </th>
+                    <td style="padding: 3px 5px; vertical-align: middle; cursor: text;" onclick="const d=this.querySelector('div'); if(d) d.focus();"><div contenteditable="true" class="input-left" style="font-size: 12px; min-height: 22px; line-height: 1.4; word-break: keep-all;">${item.q}</div></td>
+                    <td style="padding: 3px 5px; vertical-align: middle; cursor: text;" onclick="const d=this.querySelector('div'); if(d) d.focus();"><div contenteditable="true" class="input-full" style="font-size: 12px; min-height: 22px; line-height: 1.4; word-break: keep-all;">${item.ref}</div></td>
+                    <td style="padding: 3px 5px; vertical-align: middle; text-align: center; cursor: pointer; user-select: none; -webkit-user-select: none;" onclick="const v=this.querySelector('div'); v.innerText = v.innerText === '✔' ? '' : '✔';">
+                        <div style="font-size: 18px; font-weight: bold; pointer-events: none; min-height: 22px;">${state.check1}</div>
+                    </td>
+                    <td style="padding: 3px 5px; vertical-align: middle; text-align: center; cursor: pointer; user-select: none; -webkit-user-select: none;" onclick="const v=this.querySelector('div'); v.innerText = v.innerText === '✔' ? '' : '✔';">
+                        <div style="font-size: 18px; font-weight: bold; pointer-events: none; min-height: 22px;">${state.check2}</div>
+                    </td>
+                    <td style="padding: 3px 5px; vertical-align: middle; text-align: center; cursor: pointer; user-select: none; -webkit-user-select: none;" onclick="const v=this.querySelector('div'); v.innerText = v.innerText === '✔' ? '' : '✔';">
+                        <div style="font-size: 18px; font-weight: bold; pointer-events: none; min-height: 22px;">${state.check3}</div>
+                    </td>
+                    <td style="padding: 3px 5px; vertical-align: middle; text-align: center; cursor: pointer; user-select: none; -webkit-user-select: none;" onclick="const v=this.querySelector('div'); v.innerText = v.innerText === '✔' ? '' : '✔';">
+                        <div style="font-size: 18px; font-weight: bold; pointer-events: none; min-height: 22px;">${state.check4}</div>
+                    </td>
+                    <td style="padding: 3px 5px; vertical-align: middle; cursor: text;" onclick="const d=this.querySelector('div'); if(d) d.focus();"><div contenteditable="true" class="input-full" style="font-size: 12px; min-height: 22px; line-height: 1.4;">${state.note}</div></td>
+                `;
+                chkTbody.appendChild(tr);
+            }
+        }
+
+
+        // 초기 렌더링 시 데이터 바인딩
+        document.addEventListener('DOMContentLoaded', () => {
+            // 조용한 자동 불러오기 (팝업 없이)
+            try {
+                const autoData = localStorage.getItem('smart-auto-save');
+                if (autoData) {
+                    const data = JSON.parse(autoData);
+                    if (data.inputs) {
+                        for (const [id, value] of Object.entries(data.inputs)) {
+                            const el = document.getElementById(id);
+                            if (el) el.value = value;
+                        }
+                    }
+                }
+            } catch (e) { }
+
+            // 입력 변경 시 조용하게 자동 임시저장
+            document.getElementById('view-dashboard').addEventListener('input', () => {
+                const data = { inputs: {} };
+                const inputIds = ['in-projectName', 'in-docNo', 'in-date', 'in-workType', 'in-builder1', 'in-builder2', 'in-supervisor1', 'in-supervisor2', 'in-itemName', 'in-spec', 'in-materialApproval', 'in-ks', 'in-manufacturer', 'in-supplier', 'in-quantity', 'in-contractorOpinion', 'in-specialNotes'];
+                inputIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) data.inputs[id] = el.value;
+                });
+                localStorage.setItem('smart-auto-save', JSON.stringify(data));
+            });
+
+            // 인라인 사진대지 초기 항목 2개 추가
+            addInlinePhoto();
+            addInlinePhoto();
+
+            // 기본 체크리스트 항목 세팅
+            const initialChkData = [
+                { q: 'Sleeve의 위치는 승인도면과 일치하는가?', ref: '시방서' },
+                { q: 'Sleeve의 위치는 승인도면과 일치하는가?', ref: '승인도면 참조' },
+                { q: 'Sleeve는 위치변동이 없도록 견고하게 고정 하였는가?', ref: '육안검사' },
+                { q: '타공정과 간섭현상은 없는가?', ref: '승인도면 참조' },
+                { q: '냉매배관과 드레인 접합부의 이음부속은 합당하게 체결되었는가?', ref: '육안검사' }
+            ];
+            initialChkData.forEach(data => addChkItem(data));
+
+            // 기본 참여자 2명 사전 등록
+            addWorkerItem({ pos: '설비공', name: '김홍일', id: '831208-*******' });
+            addWorkerItem({ pos: '설비공', name: '김수영', id: '900825-*******' });
+        });
+
+        // 화면 전환 로직
+        function showDashboard() {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-dashboard').classList.add('active');
+            document.body.classList.remove('is-document');
+            document.body.classList.add('is-dashboard');
+            document.getElementById('doc-nav').style.display = 'none';
+        }
+
+        function openDoc(viewId) {
+            // 1. 대시보드에서 데이터 가져오기
+            const v = (id) => { const el = document.getElementById('in-' + id); return el ? el.value : ''; };
+
+            // 2. 클래스 기반으로 데이터 바인딩
+            const map = {
+                'out-projectName': v('projectName'),
+                'out-docNo': v('docNo'),
+                'out-date': v('date'),
+                'out-workType': v('workType'),
+                'out-builder1': v('builder1'),
+                'out-builder2': v('builder2'),
+                'out-supervisor1': v('supervisor1'),
+                'out-supervisor2': v('supervisor2'),
+                'out-itemName': v('itemName'),
+                'out-spec': v('spec'),
+                'out-materialApproval': v('materialApproval'),
+                'out-ks': v('ks'),
+                'out-manufacturer': v('manufacturer'),
+                'out-supplier': v('supplier'),
+                'out-quantity': v('quantity'),
+                'out-contractorOpinion': v('contractorOpinion'),
+                'out-specialNotes': v('specialNotes')
+            };
+
+            for (const [cls, val] of Object.entries(map)) {
+                document.querySelectorAll('.' + cls).forEach(el => {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.value = val;
+                    } else {
+                        el.innerText = val;
+                    }
+                });
+            }
+
+            // 2.5. 검측 사항 목록 가져오기 및 바인딩
+            const reqItemsArray = [];
+            document.querySelectorAll('.req-item input').forEach(input => {
+                if (input.value.trim() !== '') reqItemsArray.push(input.value.trim());
+            });
+
+            // 검측요청서용 (멀티라인)
+            const reqListStr = reqItemsArray.map((item, index) => `${index + 1}. ${item}`).join('\n');
+            document.querySelectorAll('.out-reqItems').forEach(ta => {
+                ta.value = reqListStr;
+                // 높이 자동 조절
+                setTimeout(() => {
+                    ta.style.height = 'auto';
+                    ta.style.height = (ta.scrollHeight) + 'px';
+                }, 10);
+            });
+
+            // 체크리스트 (콤마로 연결)
+            const subWorkTypeStr = reqItemsArray.join(', ');
+            document.querySelectorAll('.out-subWorkType').forEach(input => {
+                if (input.tagName === 'DIV') input.innerText = subWorkTypeStr;
+                else input.value = subWorkTypeStr;
+            });
+
+            // 사진대지 제목 ([품명] 자재검수) - 인쇄용 view-photos 동기화
+            syncInlinePhotosToView();
+
+            // 검수결과 통보 연도 추출
+            const dateStr = v('date');
+            const yearMatch = dateStr.match(/^(\d{4})/);
+            const yearStr = yearMatch ? yearMatch[1] : new Date().getFullYear();
+            document.querySelectorAll('.year-only').forEach(el => el.innerText = yearStr);
+
+
+
+            // 4. 뷰 전환 (인쇄 모드가 아닐 때만)
+            if (!document.body.classList.contains('print-all-mode')) {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+
+                if (viewId === 'all') {
+                    ['view-request', 'view-checklist', 'view-photos'].forEach(id => {
+                        document.getElementById(id).classList.add('active');
+                    });
+                } else {
+                    document.getElementById(viewId).classList.add('active');
+                }
+
+                document.body.classList.remove('is-dashboard');
+                document.body.classList.add('is-document');
+                document.getElementById('doc-nav').style.display = 'flex';
+
+                // 맨 위로 스크롤
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // 전체 서류 출력 (PDF 파일로 직접 다운로드 및 화면에 즉시 띄우기)
+        async function printAll() {
+            const views = ['view-request', 'view-checklist', 'view-photos'];
+            const nav = document.getElementById('doc-nav');
+            const dashboard = document.getElementById('view-dashboard');
+
+            // 모바일 기기 감지 및 팝업 차단 우회를 위한 동기 창 미리 띄우기
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            let newWin = null;
+            if (isMobile) {
+                newWin = window.open('', '_blank');
+                if (newWin) {
+                    newWin.document.write('<meta name="viewport" content="width=device-width, initial-scale=1.0"><div style="display:flex; height:100vh; align-items:center; justify-content:center; font-family:sans-serif; text-align:center; background:#f8f9fa; color:#333;"><h3>⏳ PDF 문서를 생성 중입니다.<br><br>잠시만 기다려주세요...</h3></div>');
+                }
+            }
+
+            // 로딩 상태 표시
+            const btnNav = document.querySelector('.btn-print-all');
+            const btnDash = document.querySelector('.btn-print-all-dash');
+            const originalTextNav = btnNav ? btnNav.innerHTML : '⭐ 전체 PDF 저장';
+            const originalTextDash = btnDash ? btnDash.innerHTML : '⭐ 전체 서류 한꺼번에 PDF 저장';
+
+            if (btnNav) { btnNav.innerHTML = '⏳ PDF 생성중...'; btnNav.disabled = true; }
+            if (btnDash) { btnDash.innerHTML = '⏳ PDF 생성중... (기다려주세요)'; btnDash.disabled = true; }
+
+            // 1. 네비게이션 및 대시보드 강제 숨김 및 전체 출력 모드 설정
+            nav.style.setProperty('display', 'none', 'important');
+            dashboard.classList.remove('active');
+            document.body.classList.add('print-all-mode');
+
+            // 2. 모든 문서 데이터 동기화 및 활성화
+            views.forEach(v => {
+                openDoc(v);
+                document.getElementById(v).classList.add('active');
+            });
+
+            // 3. 레이아웃 렌더링 대기
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const title = document.getElementById('in-docNo').value || '검측서류_전체';
+                let isFirstPage = true;
+
+                for (const viewId of views) {
+                    const view = document.getElementById(viewId);
+                    const pages = view.querySelectorAll('.page');
+                    for (let i = 0; i < pages.length; i++) {
+                        if (!isFirstPage) pdf.addPage();
+
+                        // 모바일 화질을 위해 scale 2 유지
+                        const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                        // A4 사이즈: 가로 210mm, 세로 297mm
+                        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                        isFirstPage = false;
+                    }
+                }
+
+                // 생성된 PDF를 Blob 형태로 추출
+                const blob = pdf.output('blob');
+                const blobUrl = URL.createObjectURL(blob);
+
+                if (isMobile && newWin) {
+                    // 모바일: 미리 열어둔 새 창의 주소를 PDF 주소로 변경하여 내장 뷰어로 즉시 열기
+                    newWin.location.href = blobUrl;
+                } else {
+                    // PC이거나 팝업이 차단된 경우 명시적 다운로드
+                    if (newWin) newWin.close();
+
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = blobUrl;
+                    a.download = `${title}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+            } catch (error) {
+                console.error(error);
+                if (newWin) newWin.close();
+                alert('PDF 생성 중 오류가 발생했습니다. 화면 인쇄 기능을 대신 실행합니다.');
+                window.print();
+            } finally {
+                // 4. 상태 복구
+                document.body.classList.remove('print-all-mode');
+                nav.style.display = 'flex';
+
+                views.forEach(v => {
+                    if (v !== 'view-photos') document.getElementById(v).classList.remove('active');
+                });
+
+                if (btnNav) { btnNav.innerHTML = originalTextNav; btnNav.disabled = false; }
+                if (btnDash) { btnDash.innerHTML = originalTextDash; btnDash.disabled = false; }
+            }
+        }
+
+        // 사진 첨부 (모바일 카메라 지원)
+        function triggerInput(area) { area.querySelector('input[type="file"]').click(); }
+
+        async function previewDrawing(input) {
+            const area = input.parentElement;
+            const img = area.querySelector('img');
+            const span = area.querySelector('span');
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+
+                // PDF 파일인 경우 pdf.js를 사용해 첫 페이지만 이미지로 변환
+                if (file.type === 'application/pdf') {
+                    const originalText = span ? span.innerHTML : '';
+                    if (span) span.innerHTML = '⏳ PDF 변환 중...';
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                        const page = await pdf.getPage(1); // 첫 페이지만 가져오기
+
+                        // 고해상도 렌더링 (확대해도 선명하도록 scale 2.0 적용)
+                        const viewport = page.getViewport({ scale: 2.0 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                        img.src = canvas.toDataURL('image/png');
+                        img.style.display = 'block';
+                        if (span) span.style.display = 'none';
+                        area.style.backgroundColor = '#fff';
+                    } catch (e) {
+                        console.error(e);
+                        alert('PDF를 읽는 중 오류가 발생했습니다.');
+                        if (span) span.innerHTML = originalText;
+                    }
+                } else {
+                    // 일반 이미지(JPG, PNG 등) 파일인 경우
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                        if (span) span.style.display = 'none';
+                        area.style.backgroundColor = '#fff';
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function previewImage(input) {
+            const area = input.parentElement;
+            const img = area.querySelector('img');
+            const span = area.querySelector('span');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    span.style.display = 'none';
+                    area.style.border = 'none';
+                    area.style.backgroundColor = 'transparent';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // ================= 서명 패드 로직 =================
+        let _signCell = null;
+        let _signWorkerItem = null; // 대시보드 워커 아이템 서명용
+        let _signCanvas = null;
+        let _signCtx = null;
+        let _signDrawing = false;
+        let _signLastX = 0, _signLastY = 0;
+
+        function openSignModal(cell) {
+            _signCell = cell;
+            _signWorkerItem = null;
+            const overlay = document.getElementById('sign-modal-overlay');
+            overlay.classList.add('active');
+
+            _signCanvas = document.getElementById('sign-canvas');
+
+            // 레이아웃이 완료된 후 크기 계산을 위해 requestAnimationFrame 사용
+            requestAnimationFrame(() => {
+                const dpr = window.devicePixelRatio || 1;
+                _signCanvas.width = _signCanvas.offsetWidth * dpr;
+                _signCanvas.height = _signCanvas.offsetHeight * dpr;
+                _signCtx = _signCanvas.getContext('2d');
+                _signCtx.scale(dpr, dpr);
+                clearSignCanvas();
+
+                // 기존 서명 이미지가 있으면 미리 그리기
+                const existImg = cell.querySelector('img.sign-cell-img');
+                if (existImg && existImg.src) {
+                    const img = new Image();
+                    img.onload = () => _signCtx.drawImage(img, 0, 0, _signCanvas.offsetWidth, _signCanvas.offsetHeight);
+                    img.src = existImg.src;
+                }
+                bindSignEvents();
+            });
+        }
+
+        function closeSignModal() {
+            document.getElementById('sign-modal-overlay').classList.remove('active');
+            unbindSignEvents();
+            _signCell = null;
+        }
+
+        function clearSignCanvas() {
+            if (!_signCtx || !_signCanvas) return;
+            _signCtx.fillStyle = '#ffffff';
+            _signCtx.fillRect(0, 0, _signCanvas.offsetWidth, _signCanvas.offsetHeight);
+        }
+
+        // 대시보드 워커 아이템의 서명 패드 열기
+        function openWorkerSignModal(workerItem) {
+            _signWorkerItem = workerItem;
+            _signCell = null;
+            const overlay = document.getElementById('sign-modal-overlay');
+            overlay.classList.add('active');
+
+            _signCanvas = document.getElementById('sign-canvas');
+
+            requestAnimationFrame(() => {
+                const dpr = window.devicePixelRatio || 1;
+                _signCanvas.width = _signCanvas.offsetWidth * dpr;
+                _signCanvas.height = _signCanvas.offsetHeight * dpr;
+                _signCtx = _signCanvas.getContext('2d');
+                _signCtx.scale(dpr, dpr);
+                clearSignCanvas();
+
+                // 기존 서명 이미지가 있으면 미리 그리기
+                const existImg = workerItem.querySelector('.worker-sign-preview img');
+                if (existImg && existImg.src) {
+                    const img = new Image();
+                    img.onload = () => _signCtx.drawImage(img, 0, 0, _signCanvas.offsetWidth, _signCanvas.offsetHeight);
+                    img.src = existImg.src;
+                }
+                bindSignEvents();
+            });
+        }
+
+        function saveSign() {
+            if (!_signCanvas) return;
+            const dataUrl = _signCanvas.toDataURL('image/png');
+
+            if (_signWorkerItem) {
+                // 대시보드 워커 아이템 서명 저장
+                const preview = _signWorkerItem.querySelector('.worker-sign-preview');
+                preview.innerHTML = `<img src="${dataUrl}" style="max-height:54px; max-width:100%; object-fit:contain;">`;
+                _signWorkerItem = null;
+            } else if (_signCell) {
+                // 참여자실명부 서명 셀 저장
+                _signCell.innerHTML = `
+                    <div style="position:relative; display:inline-block; cursor:pointer;" onclick="openSignModal(this.parentElement)">
+                        <img src="${dataUrl}" class="sign-cell-img" alt="서명" style="max-height:36px;">
+                        <span style="position:absolute; bottom:-5px; right:-5px; font-size:10px; background:rgba(0,0,0,0.5); color:white; border-radius:50%; width:14px; height:14px; display:flex; align-items:center; justify-content:center;">✍</span>
+                    </div>
+                `;
+
+                // 대시보드 데이터와 동기화 (작업자 정보가 있는 경우)
+                const row = _signCell.closest('tr');
+                if (row) {
+                    const rowIndex = Array.from(row.parentElement.rows).indexOf(row);
+                    const workerItems = document.querySelectorAll('.worker-item');
+                    if (workerItems[rowIndex]) {
+                        const preview = workerItems[rowIndex].querySelector('.worker-sign-preview');
+                        if (preview) {
+                            preview.innerHTML = `<img src="${dataUrl}" style="max-height:54px; max-width:100%; object-fit:contain;">`;
+                        }
+                    }
+                }
+                _signCell = null;
+            }
+            closeSignModal();
+        }
+
+        function _getPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const src = e.touches ? e.touches[0] : e;
+            return {
+                x: (src.clientX - rect.left),
+                y: (src.clientY - rect.top)
+            };
+        }
+
+        function _onStart(e) {
+            e.preventDefault();
+            _signDrawing = true;
+            const p = _getPos(e, _signCanvas);
+            _signLastX = p.x; _signLastY = p.y;
+            _signCtx.beginPath();
+            _signCtx.moveTo(p.x, p.y);
+        }
+        function _onMove(e) {
+            e.preventDefault();
+            if (!_signDrawing) return;
+            const p = _getPos(e, _signCanvas);
+            _signCtx.lineWidth = 2.5;
+            _signCtx.lineCap = 'round';
+            _signCtx.lineJoin = 'round';
+            _signCtx.strokeStyle = '#000';
+            _signCtx.lineTo(p.x, p.y);
+            _signCtx.stroke();
+            _signLastX = p.x; _signLastY = p.y;
+        }
+        function _onEnd(e) { _signDrawing = false; _signCtx.closePath(); }
+
+        function bindSignEvents() {
+            unbindSignEvents();
+            _signDrawing = false;
+            _signCanvas.addEventListener('mousedown', _onStart);
+            _signCanvas.addEventListener('mousemove', _onMove);
+            _signCanvas.addEventListener('mouseup', _onEnd);
+            _signCanvas.addEventListener('mouseleave', _onEnd);
+            _signCanvas.addEventListener('touchstart', _onStart, { passive: false });
+            _signCanvas.addEventListener('touchmove', _onMove, { passive: false });
+            _signCanvas.addEventListener('touchend', _onEnd);
+        }
+        function unbindSignEvents() {
+            if (!_signCanvas) return;
+            _signCanvas.removeEventListener('mousedown', _onStart);
+            _signCanvas.removeEventListener('mousemove', _onMove);
+            _signCanvas.removeEventListener('mouseup', _onEnd);
+            _signCanvas.removeEventListener('mouseleave', _onEnd);
+            _signCanvas.removeEventListener('touchstart', _onStart);
+            _signCanvas.removeEventListener('touchmove', _onMove);
+            _signCanvas.removeEventListener('touchend', _onEnd);
+        }
+
+        // 검측 사항 항목 추가 로직
+        function addReqItem() {
+            const container = document.getElementById('req-list-container');
+            const div = document.createElement('div');
+            div.className = 'row form-group req-item';
+            div.innerHTML = `
+                <input type="text" class="form-input col" placeholder="추가할 검측 사항을 입력하세요">
+                <button class="btn-remove" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // 참여자 실명부 서명 작성 항목 추가
+        function addWorkerItem(data = {}) {
+            const container = document.getElementById('worker-list-container');
+            const div = document.createElement('div');
+            div.className = 'worker-item';
+            const signImg = data.signImg || '';
+            div.innerHTML = `
+                <button class="btn-remove" onclick="this.closest('.worker-item').remove()">X</button>
+                <div class="row">
+                    <div class="col form-group">
+                        <label>직위</label>
+                        <input type="text" class="form-input worker-pos" value="${data.pos || ''}" placeholder="예: 설비공">
+                    </div>
+                    <div class="col form-group">
+                        <label>성명</label>
+                        <input type="text" class="form-input worker-name" value="${data.name || ''}" placeholder="예: 홍길동">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>주민등록번호</label>
+                    <input type="text" class="form-input worker-id" value="${data.id || ''}" placeholder="예: 830101-*******">
+                </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <span>✍️ 서명란 <span style="font-size:11px; color:rgba(0,255,198,0.7); font-weight:normal;">(터치하여 직접 서명)</span></span>
+                        <button type="button" onclick="clearWorkerSign(this.closest('.worker-item'))" style="padding:3px 8px; background:rgba(255,80,80,0.2); border:1px solid rgba(255,80,80,0.5); border-radius:5px; color:#ff8080; font-size:11px; cursor:pointer;">🗑 지우기</button>
+                    </label>
+                    <div class="sign-box worker-sign-box" onclick="openWorkerSignModal(this.closest('.worker-item'))">
+                        <div class="worker-sign-preview" style="width:100%; display:flex; align-items:center; justify-content:center; min-height:60px; pointer-events:none;">
+                            ${signImg
+                    ? `<img src="${signImg}" style="max-height:54px; max-width:100%; object-fit:contain;">`
+                    : `<div class="sign-placeholder"><span>✍️</span><p>터치하여 서명하기</p></div>`
+                }
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        // 워커 서명 지우기
+        function clearWorkerSign(workerItem) {
+            const preview = workerItem.querySelector('.worker-sign-preview');
+            if (preview) {
+                preview.innerHTML = `<div class="sign-placeholder"><span>✍️</span><p>터치하여 서명하기</p></div>`;
+            }
+        }
+
+        // 사진대지 페이지 추가 로직
+        function addPhotoPage() {
+            const container = document.querySelector('#view-photos .page-container');
+            const firstPage = container.querySelector('.page');
+            const newPage = firstPage.cloneNode(true);
+
+            // 이미지 및 파일 입력 초기화
+            const imgs = newPage.querySelectorAll('img');
+            const spans = newPage.querySelectorAll('.photo-area span');
+            const areas = newPage.querySelectorAll('.photo-area');
+            const inputs = newPage.querySelectorAll('input[type="file"]');
+
+            for (let i = 0; i < imgs.length; i++) {
+                imgs[i].src = '';
+                imgs[i].style.display = 'none';
+                spans[i].style.display = 'block';
+                areas[i].style.border = '2px dashed #ced4da';
+                areas[i].style.backgroundColor = '#f8f9fa';
+                inputs[i].value = '';
+            }
+
+            // 기존 텍스트 입력값 복사
+            const originalInputs = firstPage.querySelectorAll('input[type="text"], textarea, [contenteditable="true"]');
+            const newTextInputs = newPage.querySelectorAll('input[type="text"], textarea, [contenteditable="true"]');
+            for (let i = 0; i < originalInputs.length; i++) {
+                if (originalInputs[i].hasAttribute('contenteditable')) {
+                    newTextInputs[i].innerText = originalInputs[i].innerText;
+                } else {
+                    newTextInputs[i].value = originalInputs[i].value;
+                }
+            }
+
+            // 삭제 버튼 추가 (인쇄 시 숨김)
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '🗑️ 페이지 삭제';
+            deleteBtn.className = 'no-print';
+            deleteBtn.style.cssText = 'position: absolute; top: 15px; right: 15px; padding: 8px 12px; background: #fff0f0; color: #cc4444; border: 1px solid #ffcccc; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 10;';
+            deleteBtn.onclick = function () {
+                newPage.remove();
+            };
+            newPage.appendChild(deleteBtn);
+
+            container.appendChild(newPage);
+
+            // 새로 추가된 페이지로 스크롤
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 50);
+        }
+
+        // ================= 내보내기 기능 =================
+
+        // 1. 엑셀 내보내기
+        function getEditableHtmlForExport() {
+            const currentView = document.querySelector('.view-section.active').id;
+            // 모든 문서를 열어서 데이터 동기화
+            const views = ['view-request', 'view-checklist', 'view-participants', 'view-photos'];
+            views.forEach(v => openDoc(v));
+
+            let htmlContent = '';
+            views.forEach((v, idx) => {
+                const view = document.getElementById(v);
+                const clone = view.cloneNode(true);
+
+                // 워드 넘침 방지를 위해 고정 높이와 패딩 해제
+                clone.querySelectorAll('.page').forEach(p => {
+                    p.style.height = 'auto';
+                    p.style.maxHeight = 'none';
+                    p.style.padding = '0';
+                    p.style.boxShadow = 'none';
+                });
+
+                // 워드 넘침 방지: 고정 높이만 제거하여 유연하게 만듦
+                clone.querySelectorAll('*').forEach(el => {
+                    if (el.style.height) el.style.height = 'auto';
+                    if (el.style.minHeight) el.style.minHeight = 'auto';
+                });
+
+                // MS Word가 모든 div마다 강제로 집어넣는 '단락 뒤 공백(10pt)'을 원천 차단하기 위해 클래스 부여
+                clone.querySelectorAll('div, p').forEach(el => {
+                    el.classList.add('MsoNormal');
+                });
+
+                // 워드 전용: 사진대지 내 빈 칸 유지 및 이미지 크기 폭주 방지
+                clone.querySelectorAll('.photo-area').forEach(area => {
+                    const td = area.closest('td');
+                    if (td) {
+                        td.setAttribute('height', '340');
+                        td.style.height = '90mm';
+                    }
+
+                    const img = area.querySelector('img');
+                    if (img && img.src && img.style.display !== 'none') {
+                        img.setAttribute('width', '650');
+                        img.setAttribute('height', '330');
+                    }
+                });
+
+                // input 태그 값을 텍스트로 변환 (줄바꿈 유지)
+                clone.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                    const span = document.createElement('span');
+                    let val = input.value.replace(/\n/g, '<br>');
+                    span.innerHTML = val.trim() === '' ? '&nbsp;' : val;
+                    input.parentNode.replaceChild(span, input);
+                });
+
+                // div 속성 정리
+                clone.querySelectorAll('[contenteditable="true"]').forEach(div => {
+                    div.removeAttribute('contenteditable');
+                    if (div.innerHTML.replace(/<br>/g, '').trim() === '') div.innerHTML = '&nbsp;';
+                });
+
+                // 인쇄 방지 요소 제거
+                clone.querySelectorAll('.no-print, button').forEach(el => el.remove());
+
+                // 불필요한 줄바꿈 코드를 지워 워드의 유령 여백 방지
+                let viewHtml = clone.innerHTML.replace(/\n/g, '').replace(/\r/g, '');
+
+                // 검측요청서는 절대 쪼개지지 않도록 마스터 테이블에 가둠
+                if (v === 'view-request') {
+                    viewHtml = `
+                    <table style="width:100%; border:none; margin:0; padding:0; page-break-inside: avoid;">
+                        <tr><td style="border:none; padding:0; vertical-align:top; text-align:left;">
+                            ${viewHtml}
+                        </td></tr>
+                    </table>`;
+                }
+
+                // 각 서류를 명확하게 페이지 분할 (단, 마지막 서류 뒤에는 페이지 분할 없음)
+                htmlContent += viewHtml;
+                if (idx < views.length - 1) {
+                    htmlContent += '<br clear="all" style="page-break-before:always; mso-break-type:page-break" />';
+                }
+            });
+
+            // 원래 화면 복귀
+            if (currentView === 'view-dashboard') showDashboard();
+            else openDoc(currentView);
+
+            return htmlContent;
+        }
+
+        // 1. 워드 내보내기 (표 구조 유지, 수정 가능)
+        function exportWordHTML() {
+            const btn = document.querySelector('.btn-word');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ 생성중...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const htmlContent = getEditableHtmlForExport();
+                const fullHtml = `
+                    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                    <head><meta charset='utf-8'><title>Export Word</title>
+                    <style>
+                        @page { margin: 0.5cm; }
+                        body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; font-size: 11px; zoom: 85%; }
+                        table { border-collapse: collapse; width: 100%; margin-bottom: 5px; }
+                        th, td { border: 1px solid #000; padding: 2px !important; text-align: center; font-size: 11px; height: auto !important; }
+                        .req-table th { height: 35px !important; }
+                        .chk-table th, .chk-table td { height: 24px !important; padding: 2px !important; }
+                        .part-table th, .part-table td { height: 45px !important; }
+                        .photo-area { height: 90mm !important; }
+                        /* Word 기본 단락 여백 강제 제거의 핵심 */
+                        .MsoNormal { margin: 0cm 0cm 0.0001pt 0cm !important; line-height: 1.1 !important; }
+                    </style>
+                    </head><body>
+                    ${htmlContent}
+                    </body></html>`;
+
+                const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const title = document.getElementById('in-docNo').value || '검측서류';
+                a.download = `${title}.doc`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 100);
+        }
+
+        // ================= 임시 저장 / 불러오기 로직 =================
+        function saveTempData() {
+            const defaultName = (document.getElementById('in-docNo').value || '') + ' ' + (document.getElementById('in-location').value || '');
+            const saveName = prompt('임시저장할 파일 이름을 입력하세요:', defaultName.trim() || '새 임시저장');
+            if (!saveName) return;
+
+            const data = {
+                timestamp: new Date().toLocaleString(),
+                inputs: {},
+                reqItems: [],
+                workers: []
+            };
+
+            // 1. 기본 입력값 저장
+            const inputIds = ['in-projectName', 'in-docNo', 'in-date', 'in-workType', 'in-builder1', 'in-builder2', 'in-supervisor1', 'in-supervisor2', 'in-itemName', 'in-spec', 'in-materialApproval', 'in-ks', 'in-manufacturer', 'in-supplier', 'in-quantity', 'in-contractorOpinion', 'in-specialNotes'];
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) data.inputs[id] = el.value;
+            });
+
+            // 2. 검측 사항 저장
+            document.querySelectorAll('#req-list-container .req-item input').forEach(input => {
+                data.reqItems.push(input.value);
+            });
+
+            // 2-2. 체크리스트 항목 저장
+            data.chkItems = [];
+            document.querySelectorAll('#chk-list-container .chk-input-item').forEach(item => {
+                data.chkItems.push({
+                    q: item.querySelector('.chk-q').value,
+                    ref: item.querySelector('.chk-ref').value
+                });
+            });
+
+            // 3. 참여자 실명부 저장
+            document.querySelectorAll('#worker-list-container .worker-item').forEach(item => {
+                const previewImg = item.querySelector('.worker-sign-preview img');
+                data.workers.push({
+                    pos: item.querySelector('.worker-pos') ? item.querySelector('.worker-pos').value : '',
+                    name: item.querySelector('.worker-name') ? item.querySelector('.worker-name').value : '',
+                    id: item.querySelector('.worker-id') ? item.querySelector('.worker-id').value : '',
+                    signImg: previewImg ? previewImg.src : ''
+                });
+            });
+
+            let saves = JSON.parse(localStorage.getItem('smart-saves') || '{}');
+            saves[saveName] = data;
+            localStorage.setItem('smart-saves', JSON.stringify(saves));
+
+            alert(`[${saveName}] 이름으로 안전하게 임시저장 되었습니다.\n나중에 [📂 불러오기]에서 이 이름을 선택해 복구할 수 있습니다.`);
+        }
+
+        function loadTempData() {
+            const saves = JSON.parse(localStorage.getItem('smart-saves') || '{}');
+            const keys = Object.keys(saves);
+
+            // 기존 단일 임시저장 마이그레이션
+            const legacySave = localStorage.getItem('smart-inspection-temp');
+            if (legacySave && Object.keys(saves).length === 0) {
+                saves['기존 임시저장'] = JSON.parse(legacySave);
+                localStorage.setItem('smart-saves', JSON.stringify(saves));
+                localStorage.removeItem('smart-inspection-temp');
+                keys.push('기존 임시저장');
+            }
+
+            const container = document.getElementById('load-list-container');
+            container.innerHTML = '';
+
+            if (keys.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">저장된 파일이 없습니다.</p>';
+            } else {
+                // 최신순 정렬 (단순히 key 배열 뒤집기, 혹은 timestamp 기준)
+                keys.reverse().forEach(k => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'background: rgba(255,255,255,0.1); padding: 12px 15px; border-radius: 8px; display:flex; justify-content:space-between; align-items:center;';
+
+                    const timeStr = saves[k].timestamp ? `<div style="font-size:11px; color:#aaa; margin-top:4px;">${saves[k].timestamp}</div>` : '';
+
+                    div.innerHTML = `
+                        <div style="flex:1; cursor:pointer;" onclick="loadDataKey('${k}')">
+                            <div style="color:#fff; font-weight:bold; font-size:15px;">${k}</div>
+                            ${timeStr}
+                        </div>
+                        <button onclick="deleteDataKey('${k}', this)" style="background:#fff0f0; color:#cc4444; border:1px solid #ffcccc; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; margin-left:10px;">삭제</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            document.getElementById('load-modal-overlay').classList.add('active');
+        }
+
+        function closeLoadModal() {
+            document.getElementById('load-modal-overlay').classList.remove('active');
+        }
+
+        function loadDataKey(key) {
+            const saves = JSON.parse(localStorage.getItem('smart-saves') || '{}');
+            const data = saves[key];
+            if (!data) return;
+
+            if (!confirm(`[${key}] 데이터를 불러오시겠습니까?\n현재 화면에 작성된 내용은 덮어씌워집니다.`)) return;
+
+            try {
+                // 1. 기본 입력값 복원
+                if (data.inputs) {
+                    for (const [id, value] of Object.entries(data.inputs)) {
+                        const el = document.getElementById(id);
+                        if (el) el.value = value;
+                    }
+                }
+
+                // 2. 검측 사항 복원
+                if (data.reqItems && Array.isArray(data.reqItems)) {
+                    const reqContainer = document.getElementById('req-list-container');
+                    reqContainer.innerHTML = ''; // 초기화
+                    data.reqItems.forEach(val => {
+                        const div = document.createElement('div');
+                        div.className = 'row form-group req-item';
+                        div.innerHTML = `
+                            <input type="text" class="form-input col" value="${val}">
+                            <button class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                        `;
+                        reqContainer.appendChild(div);
+                    });
+                }
+
+                // 2-2. 체크리스트 항목 복원
+                if (data.chkItems && Array.isArray(data.chkItems)) {
+                    const chkContainer = document.getElementById('chk-list-container');
+                    chkContainer.innerHTML = ''; // 초기화
+                    data.chkItems.forEach(val => addChkItem(val));
+                }
+
+                // 3. 참여자 실명부 복원
+                if (data.workers && Array.isArray(data.workers)) {
+                    const workerContainer = document.getElementById('worker-list-container');
+                    workerContainer.innerHTML = ''; // 초기화
+                    data.workers.forEach(w => addWorkerItem(w));
+                }
+
+                closeLoadModal();
+                alert(`[${key}] 데이터를 성공적으로 불러왔습니다.`);
+            } catch (e) {
+                alert('데이터를 불러오는 중 오류가 발생했습니다.');
+                console.error(e);
+            }
+        }
+
+        function deleteDataKey(key, btn) {
+            if (!confirm(`[${key}] 저장 파일을 삭제하시겠습니까?`)) return;
+            const saves = JSON.parse(localStorage.getItem('smart-saves') || '{}');
+            delete saves[key];
+            localStorage.setItem('smart-saves', JSON.stringify(saves));
+            btn.parentElement.remove();
+
+            const container = document.getElementById('load-list-container');
+            if (container.children.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">저장된 파일이 없습니다.</p>';
+            }
+        }
+
+        // ================= 자재 세부 정보 템플릿 관리 =================
+        const MATERIAL_FIELDS = [
+            'in-itemName', 'in-spec', 'in-materialApproval', 'in-ks',
+            'in-manufacturer', 'in-supplier', 'in-quantity', 'in-contractorOpinion', 'in-specialNotes'
+        ];
+
+        function saveMaterialTemplate() {
+            const data = {};
+            let hasData = false;
+            MATERIAL_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value.trim()) { data[id] = el.value.trim(); hasData = true; }
+            });
+
+            if (!hasData) { alert('저장할 자재 정보가 없습니다.'); return; }
+
+            const templateName = prompt('템플릿 이름을 입력하세요 (예: PVC배관-Ø100):', '');
+            if (!templateName) return;
+
+            const presets = JSON.parse(localStorage.getItem('smart-material-presets') || '{}');
+            presets[templateName] = data;
+            localStorage.setItem('smart-material-presets', JSON.stringify(presets));
+            alert(`[${templateName}] 템플릿이 저장되었습니다.`);
+        }
+
+        function loadMaterialTemplateList() {
+            const presets = JSON.parse(localStorage.getItem('smart-material-presets') || '{}');
+            const keys = Object.keys(presets);
+            const container = document.getElementById('material-template-list-container');
+            container.innerHTML = '';
+
+            if (keys.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">저장된 템플릿이 없습니다.</p>';
+            } else {
+                keys.forEach(k => {
+                    const d = presets[k];
+                    const preview = [d['in-itemName'], d['in-spec'], d['in-manufacturer']].filter(Boolean).join(' / ');
+                    const div = document.createElement('div');
+                    div.style.cssText = 'background: rgba(255,255,255,0.1); padding: 12px 15px; border-radius: 8px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;';
+                    div.innerHTML = `
+                        <div style="flex:1; cursor:pointer;" onclick="applyMaterialTemplate('${k}')">
+                            <div style="color:#fff; font-weight:bold; font-size:15px;">${k}</div>
+                            <div style="font-size:11px; color:#aaa; margin-top:4px;">${preview}</div>
+                        </div>
+                        <button onclick="deleteMaterialTemplate('${k}', this)" style="background:#fff0f0; color:#cc4444; border:1px solid #ffcccc; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; margin-left:10px;">삭제</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('material-template-modal-overlay').classList.add('active');
+        }
+
+        function closeMaterialTemplateModal() {
+            document.getElementById('material-template-modal-overlay').classList.remove('active');
+        }
+
+        function applyMaterialTemplate(key) {
+            const presets = JSON.parse(localStorage.getItem('smart-material-presets') || '{}');
+            const data = presets[key];
+            if (!data) return;
+            if (!confirm(`[${key}] 템플릿을 불러오시겠습니까?\n현재 자재 정보는 덮어씌워집니다.`)) return;
+
+            MATERIAL_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = data[id] || '';
+            });
+
+            closeMaterialTemplateModal();
+            alert(`[${key}] 템플릿을 적용했습니다.`);
+        }
+
+        function deleteMaterialTemplate(key, btn) {
+            if (!confirm(`[${key}] 템플릿을 삭제하시겠습니까?`)) return;
+            const presets = JSON.parse(localStorage.getItem('smart-material-presets') || '{}');
+            delete presets[key];
+            localStorage.setItem('smart-material-presets', JSON.stringify(presets));
+            btn.parentElement.remove();
+
+            const container = document.getElementById('material-template-list-container');
+            if (container.children.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">저장된 템플릿이 없습니다.</p>';
+            }
+        }
+
+        // ================= 체크리스트 템플릿 관리 =================
+        function saveChkTemplate() {
+            const items = [];
+            document.querySelectorAll('#chk-list-container .chk-input-item').forEach(item => {
+                const q = item.querySelector('.chk-q').value.trim();
+                const ref = item.querySelector('.chk-ref').value.trim();
+                if (q || ref) items.push({ q, ref });
+            });
+
+            if (items.length === 0) {
+                alert('저장할 체크리스트 항목이 없습니다.');
+                return;
+            }
+
+            const templateName = prompt('체크리스트 템플릿 이름을 입력하세요 (예: 기계설비-배관):', '');
+            if (!templateName) return;
+
+            const presets = JSON.parse(localStorage.getItem('smart-chk-presets') || '{}');
+            presets[templateName] = items;
+            localStorage.setItem('smart-chk-presets', JSON.stringify(presets));
+
+            alert(`[${templateName}] 템플릿이 저장되었습니다.`);
+        }
+
+        function loadChkTemplateList() {
+            const presets = JSON.parse(localStorage.getItem('smart-chk-presets') || '{}');
+            const keys = Object.keys(presets);
+            const container = document.getElementById('chk-template-list-container');
+            container.innerHTML = '';
+
+            if (keys.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">저장된 템플릿이 없습니다.</p>';
+            } else {
+                keys.forEach(k => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'background: rgba(255,255,255,0.1); padding: 12px 15px; border-radius: 8px; display:flex; justify-content:space-between; align-items:center;';
+                    div.innerHTML = `
+                        <div style="flex:1; cursor:pointer;" onclick="applyChkTemplate('${k}')">
+                            <div style="color:#fff; font-weight:bold; font-size:15px;">${k}</div>
+                            <div style="font-size:11px; color:#aaa; margin-top:4px;">항목 ${presets[k].length}개</div>
+                        </div>
+                        <button onclick="deleteChkTemplate('${k}', this)" style="background:#fff0f0; color:#cc4444; border:1px solid #ffcccc; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; margin-left:10px;">삭제</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            document.getElementById('chk-template-modal-overlay').classList.add('active');
+        }
+
+        function closeChkTemplateModal() {
+            document.getElementById('chk-template-modal-overlay').classList.remove('active');
+        }
+
+        function applyChkTemplate(key) {
+            const presets = JSON.parse(localStorage.getItem('smart-chk-presets') || '{}');
+            const items = presets[key];
+            if (!items) return;
+
+            if (!confirm(`[${key}] 템플릿을 불러오시겠습니까?\n현재 작성된 체크리스트 항목은 덮어씌워집니다.`)) return;
+
+            const container = document.getElementById('chk-list-container');
+            container.innerHTML = ''; // 기존 항목 초기화
+            items.forEach(val => addChkItem(val));
+
+            closeChkTemplateModal();
+            alert(`[${key}] 템플릿을 적용했습니다.`);
+        }
+
+        function deleteChkTemplate(key, btn) {
+            if (!confirm(`[${key}] 템플릿을 삭제하시겠습니까?`)) return;
+            const presets = JSON.parse(localStorage.getItem('smart-chk-presets') || '{}');
+            delete presets[key];
+            localStorage.setItem('smart-chk-presets', JSON.stringify(presets));
+            btn.parentElement.remove();
+
+            const container = document.getElementById('chk-template-list-container');
+            if (container.children.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">저장된 템플릿이 없습니다.</p>';
+            }
+        }
+
+        // ================= 공통 모달 열기/닫기 =================
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+    </script>
+
+    <!-- ================= 불러오기 모달 ================= -->
+    <div id="load-modal-overlay" class="sign-modal-overlay" onclick="closeLoadModal()">
+        <div class="sign-modal" onclick="event.stopPropagation()">
+            <div class="sign-modal-title">📂 임시저장 목록</div>
+            <div id="load-list-container"
+                style="max-height: 300px; overflow-y: auto; display:flex; flex-direction:column; gap:10px; margin: 10px 0;">
+                <!-- JS generated list -->
+            </div>
+            <div class="sign-modal-btns">
+                <button class="btn-sign-cancel" onclick="closeLoadModal()" style="flex:1;">✕ 닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 템플릿 불러오기 모달 ================= -->
+    <div id="chk-template-modal-overlay" class="sign-modal-overlay" onclick="closeChkTemplateModal()">
+        <div class="sign-modal" onclick="event.stopPropagation()">
+            <div class="sign-modal-title">📂 체크리스트 템플릿 목록</div>
+            <div id="chk-template-list-container"
+                style="max-height: 300px; overflow-y: auto; display:flex; flex-direction:column; gap:10px; margin: 10px 0;">
+                <!-- JS generated list -->
+            </div>
+            <div class="sign-modal-btns">
+                <button class="btn-sign-cancel" onclick="closeChkTemplateModal()" style="flex:1;">✕ 닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 자재 세부 정보 템플릿 모달 ================= -->
+    <div id="material-template-modal-overlay" class="sign-modal-overlay" onclick="closeMaterialTemplateModal()">
+        <div class="sign-modal" onclick="event.stopPropagation()">
+            <div class="sign-modal-title">📂 자재 정보 템플릿 목록</div>
+            <div id="material-template-list-container"
+                style="max-height: 350px; overflow-y: auto; display:flex; flex-direction:column; margin: 10px 0;">
+                <!-- JS generated list -->
+            </div>
+            <div class="sign-modal-btns">
+                <button class="btn-sign-cancel" onclick="closeMaterialTemplateModal()" style="flex:1;">✕ 닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 검측요청서 내용 작성 모달 ================= -->
+    <div id="req-modal-overlay" class="sign-modal-overlay" onclick="closeModal('req-modal-overlay')">
+        <div class="sign-modal" onclick="event.stopPropagation()">
+            <div class="sign-modal-title">📄 검측요청서 항목 작성</div>
+            <div class="form-group" style="text-align:left;">
+                <label>검측요청서 등에 반영될 항목들을 기입해주세요.</label>
+                <div id="req-list-container" style="max-height: 400px; overflow-y: auto;">
+                    <div class="row form-group req-item">
+                        <input type="text" class="form-input col" value="바닥,벽체 스리브 및 이중관 및 냉매배관">
+                        <button class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addReqItem()">+ 항목 추가하기</button>
+            </div>
+            <div class="sign-modal-btns">
+                <button class="btn-sign-save" onclick="closeModal('req-modal-overlay')" style="flex:1;">✔ 완료 및
+                    닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 참여자 실명부 서명 모달 ================= -->
+    <div id="worker-modal-overlay" class="sign-modal-overlay" onclick="closeModal('worker-modal-overlay')">
+        <div class="sign-modal" onclick="event.stopPropagation()" style="max-width: 500px;">
+            <div class="sign-modal-title">👥 참여자 실명부 서명 작성</div>
+            <div class="form-group" style="text-align:left;">
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">아래에 참여자 정보를 입력하고 서명란을 터치하여 직접
+                    서명해 주세요.</p>
+                <div id="worker-list-container" style="max-height: 400px; overflow-y: auto;">
+                    <!-- workers will be appended here -->
+                </div>
+                <button class="btn-add" onclick="addWorkerItem()">+ 참여자 추가하기</button>
+            </div>
+            <div class="sign-modal-btns">
+                <button class="btn-sign-save" onclick="closeModal('worker-modal-overlay')" style="flex:1;">✔ 완료 및
+                    닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PDF 자동입력 (V4) ================= -->
+    <script>
+        const SERVER_URL = 'https://lynn-material-inspection-production.up.railway.app';
+
+        async function uploadInvoicePDF(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const btn = document.getElementById('pdf-upload-btn');
+            const status = document.getElementById('pdf-upload-status');
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 파싱 중...';
+            clearPdfMarks();
+            showStatus('loading', '⏳ Clova OCR + Claude AI 처리 중입니다...');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const res = await fetch(SERVER_URL + '/parse-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || `서버 오류 (${res.status})`);
+                }
+
+                const data = await res.json();
+                fillFromInvoice(data);
+                showDebugPanel(data);
+                showStatus('success', '✅ 자동 입력 완료 — 내용을 확인 후 필요 시 수정하세요.');
+
+            } catch (e) {
+                if (e.message.includes('fetch') || e.message.includes('Failed')) {
+                    showStatus('error', '❌ 서버에 연결할 수 없습니다. 로컬 서버가 실행 중인지 확인하세요. (python server.py)');
+                } else {
+                    showStatus('error', '❌ ' + e.message);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📄 납품서 PDF';
+                input.value = '';
+            }
+        }
+
+        function showStatus(type, msg) {
+            const el = document.getElementById('pdf-upload-status');
+            el.style.display = 'block';
+            el.innerText = msg;
+            const styles = {
+                loading: { background: '#f0f4ff', color: '#4A00E0', border: '1px solid #c4a8ff' },
+                success: { background: '#f0fff4', color: '#1a7f37', border: '1px solid #a3e6b8' },
+                error:   { background: '#fff0f0', color: '#cc0000', border: '1px solid #ffcccc' },
+            };
+            Object.assign(el.style, styles[type] || {});
+        }
+
+        function highlightField(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.background = '#fffbeb';
+            el.style.borderColor = '#f59e0b';
+            setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 3000);
+        }
+
+        function setField(id, val) {
+            const el = document.getElementById(id);
+            if (!el || val == null || val === '') return false;
+            el.value = val;
+            highlightField(id);
+            markAutoFilled(id);
+            return true;
+        }
+
+        function markAutoFilled(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // 레이블 찾기 (부모 form-group 안의 label)
+            const group = el.closest('.form-group');
+            if (!group) return;
+            const label = group.querySelector('label');
+            if (!label) return;
+            // 기존 뱃지 제거 후 재삽입
+            const existing = label.querySelector('.pdf-autofill-badge');
+            if (existing) existing.remove();
+            const badge = document.createElement('span');
+            badge.className = 'pdf-autofill-badge';
+            badge.textContent = '✓';
+            label.appendChild(badge);
+            // 사용자가 직접 수정하면 뱃지 제거
+            el.addEventListener('input', () => badge.remove(), { once: true });
+        }
+
+        function clearPdfMarks() {
+            document.querySelectorAll('.pdf-autofill-badge').forEach(b => b.remove());
+        }
+
+        function fillFromInvoice(data) {
+            // 자동입력 4개: 제조사, 납품회사, 규격, 검수요청수량
+            const mfr = data.manufacturer || {};
+            setField('in-manufacturer', mfr.brand || mfr.name);
+            setField('in-supplier', (data.supplier || {}).name);
+
+            const items = data.items || [];
+            if (items.length === 0) return;
+
+            if (items.length === 1) {
+                applyItem(items[0], data.total_qty);
+            } else {
+                showItemSelector(items, data.total_qty);
+            }
+        }
+
+        function applyItem(item, totalQty, multi) {
+            // 품명, 규격, 검수요청수량 자동입력
+            setField('in-itemName', item.name);
+            const spec = item.spec || '';
+            setField('in-spec', multi ? (spec + ' 외 다수') : spec);
+            const qty = totalQty ?? item.qty;
+            if (qty != null) setField('in-quantity', multi ? (String(qty) + ' 외 다수') : String(qty));
+        }
+
+        function showDebugPanel(data) {
+            const panel = document.getElementById('pdf-debug-panel');
+            const pre = document.getElementById('pdf-debug-json');
+            const body = document.getElementById('pdf-debug-body');
+            panel.style.display = 'block';
+            body.style.display = 'none'; // 기본 닫힘
+            pre.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showItemSelector(items, totalQty) {
+            // 복수 품목: 첫 번째 기준으로 규격·수량 "외 다수" 자동 적용
+            applyItem(items[0], totalQty, true);
+
+            const selector = document.getElementById('pdf-item-selector');
+            const list = document.getElementById('pdf-item-list');
+            list.innerHTML = '';
+            selector.style.display = 'block';
+
+            items.forEach((item, i) => {
+                const btn = document.createElement('button');
+                btn.style.cssText = 'text-align:left; padding:8px 12px; background:#fff; border:1px solid #ddd; border-radius:8px; cursor:pointer; font-size:12px; font-family:inherit; transition:0.15s;';
+                btn.innerHTML = `<span style="font-weight:700; color:var(--primary);">${i + 1}.</span> ${item.name || '(품명 없음)'} <span style="color:#888;">${item.spec || ''}</span> <span style="color:#333; font-weight:600;">× ${item.qty ?? '-'}${item.unit || ''}</span>`;
+                btn.onclick = () => {
+                    applyItem(item, i === 0 ? totalQty : item.qty, true);
+                    selector.style.display = 'none';
+                    showStatus('success', `✅ "${item.name}" 선택 완료 (규격·수량 외 다수 포함)`);
+                };
+                list.appendChild(btn);
+            });
+        }
+    </script>
+</body>
+
+</html>
