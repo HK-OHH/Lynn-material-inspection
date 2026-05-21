@@ -1,0 +1,21 @@
+# 환경변수 (API 키)
+.env
+*.env
+
+# 파싱 결과물
+output/
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 가상환경
+venv/
+.venv/
+
+# 로컬 전용
+*.local
+*.master_key
+users/
